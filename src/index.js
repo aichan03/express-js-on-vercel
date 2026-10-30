@@ -40,7 +40,7 @@ const isProd = !!process.env.VERCEL;
 const cookieOptions = {
   httpOnly: true,
   secure: isProd,                    // HTTPS only in production
-  sameSite: isProd ? 'none' : 'lax', // 'none' needed if frontend/backend are on different domains
+  sameSite: 'none',
   maxAge: SESSION_TTL * 1000,        // ms
   path: '/',
 };
@@ -72,21 +72,26 @@ app.get('/redis-connected', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (email !== 'admin@gmail.com' || password !== 'password') {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    if (email !== 'admin@gmail.com' || password !== 'password') {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const sid = crypto.randomUUID();
+    await redis.set(
+      `session:${sid}`,
+      { userId: 1, email },
+      { ex: SESSION_TTL }
+    );
+
+    res.cookie('sid', sid, cookieOptions);
+    res.json({ success: true, user: sid });
+  } catch (err) {
+    console.error('login failed:', err);
+    res.status(500).json({ error: 'Server error' });
   }
-
-  const sid = crypto.randomUUID();
-  await redis.set(
-    `session:${sid}`,
-    { userId: 1, email },
-    { ex: SESSION_TTL }
-  );
-
-  res.cookie('sid', sid, cookieOptions);
-  res.json({ success: true, user: sid });
 });
 
 app.get('/me', requireAuth, (req, res) => {
