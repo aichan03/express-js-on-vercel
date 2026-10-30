@@ -7,15 +7,27 @@ import crypto from 'crypto';
 const app = express();
 dotenv.config();
 
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(o => o.trim());
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    // allow non-browser requests (curl, Postman) that have no origin
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // only if you use cookies
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // handle preflight explicitly
+app.options('*', cors(corsOptions)); // handle preflight
+
 app.use(express.json());
 app.use(cookieParser());
 
