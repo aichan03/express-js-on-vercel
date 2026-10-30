@@ -10,10 +10,11 @@ dotenv.config();
 const allowedOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
   .map(o => o.trim());
-
+console.log('FRONTEND_URL =', process.env.FRONTEND_URL);
 const corsOptions = {
   origin: (origin, callback) => {
     // allow non-browser requests (curl, Postman) that have no origin
+    console.log('check: ', origin)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
