@@ -1,20 +1,17 @@
-import * as dotenv from "dotenv";
+import * as dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { Redis } from '@upstash/redis';
-import cookieParser from "cookie-parser";
+import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
+
 const app = express();
 dotenv.config();
 
-const allowedOrigins = (process.env.FRONTEND_URL || '')
-  .split(',')
-  .map(o => o.trim());
-console.log('FRONTEND_URL =', process.env.FRONTEND_URL);
+const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map((o) => o.trim());
+
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow non-browser requests (curl, Postman) that have no origin
-    console.log('check: ', origin)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -35,13 +32,13 @@ app.use(cookieParser());
 // const SESSION_TTL = 60 * 60 * 24 * 7; // 7 days, in seconds
 const SESSION_TTL = 60 * 5; // 5 mins, in seconds
 
-const isProd = !!process.env.VERCEL;
+const isProd = Boolean(process.env.VERCEL);
 
 const cookieOptions = {
   httpOnly: true,
-  secure: isProd,                    // HTTPS only in production
+  secure: isProd, // HTTPS only in production
   sameSite: 'none',
-  maxAge: SESSION_TTL * 1000,        // ms
+  maxAge: SESSION_TTL * 1000, // ms
   path: '/',
 };
 
@@ -51,11 +48,17 @@ const redis = new Redis({
 });
 
 async function requireAuth(req, res, next) {
-  const sid = req.cookies.sid;
-  if (!sid) return res.status(401).json({ error: 'Not authenticated' });
+  const { sid } = req.cookies;
+  if (!sid) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
 
   const session = await redis.get(`session:${sid}`);
-  if (!session) return res.status(401).json({ error: 'Session expired' });
+  if (!session) {
+    res.status(401).json({ error: 'Session expired' });
+    return;
+  }
 
   req.session = session; // Upstash auto-parses JSON
   req.sid = sid;
@@ -80,17 +83,13 @@ app.post('/login', async (req, res) => {
     }
 
     const sid = crypto.randomUUID();
-    await redis.set(
-      `session:${sid}`,
-      { userId: 1, email },
-      { ex: SESSION_TTL }
-    );
+    await redis.set(`session:${sid}`, { userId: 1, email }, { ex: SESSION_TTL });
 
     res.cookie('sid', sid, cookieOptions);
-    res.json({ success: true, user: sid });
+    return res.json({ success: true, user: sid });
   } catch (err) {
     console.error('login failed:', err);
-    res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -105,7 +104,7 @@ app.post('/logout', requireAuth, async (req, res) => {
 });
 
 if (!process.env.VERCEL) {
-  app.listen(process.env.SERVER_PORT, () => console.log('Running on http://localhost:3000'));
+  app.listen(process.env.SERVER_PORT, () => console.info('Running on http://localhost:3000'));
 }
 
 export default app;
