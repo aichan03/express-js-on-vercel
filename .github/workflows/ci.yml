@@ -1,18 +1,46 @@
 name: CI
+
 on:
-  push: { branches: [main] }
   pull_request:
+    branches: [main]
+
+# Cancel the older run when new commits are pushed to the same PR
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  check:
+  checks:
+    name: Lint, Format & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      HUSKY: 0 # skip installing git hooks in CI
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm test
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        if: success() || failure() # run even if ESLint failed
+        run: npm run format:check
+
+      - name: Vitest
+        if: success() || failure() # run even if lint/format failed
+        run: npm test

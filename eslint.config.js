@@ -20,6 +20,7 @@ export default [
     },
     settings: {
       'import/resolver': {
+        typescript: true, // handles package.json "exports" (vitest/config, etc.)
         node: { extensions: ['.js', '.mjs', '.cjs', '.json'] },
       },
     },
