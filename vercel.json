@@ -4,10 +4,6 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://express-js-on-vercel-git-skeleton-v01-ai-chan03.vercel.app/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
