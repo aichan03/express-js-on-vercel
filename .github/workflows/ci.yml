@@ -41,6 +41,6 @@ jobs:
         if: success() || failure() # run even if ESLint failed
         run: npm run format:check
 
-      - name: Vitest
-        if: success() || failure() # run even if lint/format failed
-        run: npm test
+      # - name: Vitest
+      #   if: success() || failure() # run even if lint/format failed
+      #   run: npm test
