@@ -102,6 +102,10 @@ export default [
       'no-await-in-loop': 'warn',
       'no-promise-executor-return': 'error',
       'require-atomic-updates': 'off',
+
+      //Experimental
+      // It forces you to define variables, functions, or classes before using them, which indirectly imposes an order
+      'no-use-before-define': ['error', { functions: false, classes: true, variables: true }],
     },
   },
 

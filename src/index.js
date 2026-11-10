@@ -12,11 +12,8 @@ const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map((o) => o.
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, false); // no CORS headers, browser blocks it
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -24,8 +21,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // handle preflight
-
 app.use(express.json());
 app.use(cookieParser());
 
@@ -36,9 +31,9 @@ const isProd = Boolean(process.env.VERCEL);
 
 const cookieOptions = {
   httpOnly: true,
-  secure: isProd, // HTTPS only in production
-  sameSite: 'none',
-  maxAge: SESSION_TTL * 1000, // ms
+  secure: isProd,
+  sameSite: isProd ? 'none' : 'lax', // localhost:3000 <-> localhost:5173 is same-site
+  maxAge: SESSION_TTL * 1000,
   path: '/',
 };
 

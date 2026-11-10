@@ -4,6 +4,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://express-js-on-vercel-6xo1bnay0-ai-chan03.vercel.app/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
